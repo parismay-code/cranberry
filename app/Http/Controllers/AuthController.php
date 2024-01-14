@@ -16,9 +16,8 @@ class AuthController extends Controller
     {
         $data = $request->validated();
 
-        $user = User::create([
+        $user = User::query()->create([
             'name' => $data['name'],
-            'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
 
@@ -26,7 +25,7 @@ class AuthController extends Controller
 
         $cookie = cookie('token', $token, 60 * 24);
 
-        return response()->json([
+        return response([
             'user' => new UserResource($user),
         ])->withCookie($cookie);
     }
@@ -35,10 +34,10 @@ class AuthController extends Controller
     {
         $data = $request->validated();
 
-        $user = User::where('email', $data['email'])->first();
+        $user = User::query()->where('name', $data['name'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json([
+            return response([
                 'message' => 'Email or password is incorrect.',
             ], Response::HTTP_UNAUTHORIZED);
         }
@@ -47,7 +46,7 @@ class AuthController extends Controller
 
         $cookie = cookie('token', $token, 60 * 24);
 
-        return response()->json([
+        return response([
             'user' => new UserResource($user),
         ])->withCookie($cookie);
     }
@@ -58,14 +57,12 @@ class AuthController extends Controller
 
         $cookie = cookie()->forget('token');
 
-        return response()->json([
-            'message' => 'Logged out successfully',
-        ])->withCookie($cookie);
+        return response()->withCookie($cookie);
     }
 
     public function user(Request $request): Response
     {
-        return response()->json([
+        return response([
             'user' => new UserResource($request->user()),
         ]);
     }
