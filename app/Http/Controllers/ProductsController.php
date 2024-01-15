@@ -9,6 +9,7 @@ use App\Models\ExtraCategory;
 use App\Models\Ingredient;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProductsController extends Controller
@@ -20,32 +21,36 @@ class ProductsController extends Controller
 
     public function create(ProductRequest $request, Category $category): Response
     {
-        $data = $request->validated();
+        $data = $request->safe()->except('extra_category_id');
+
+        $excludedData = $request->safe()->only('extra_category_id');
 
         /** @var Product $product */
-        $product = $category->products()->create(['name' => $data['name'], 'price' => $data['price']]);
+        $product = $category->products()->create($data);
 
-        if (!empty($data['extra_category_id'])) {
-            $extraCategory = ExtraCategory::query()->find($data['extra_category_id']);
+        if (!empty($excludedData)) {
+            $extraCategory = ExtraCategory::query()->find($excludedData['extra_category_id']);
 
             $product->extraCategory()->associate($extraCategory);
         }
 
-        return response(['product' => $product]);
+        return response(['product' => new ProductResource($product)]);
     }
 
     public function update(ProductRequest $request, Product $product): Response
     {
-        $data = $request->validated();
+        $data = $request->safe()->except('extra_category_id');
 
-        $product->update(['name' => $data['name'], 'price' => $data['price']]);
+        $excludedData = $request->safe()->only('extra_category_id');
+
+        $product->update($data);
 
         if ($product->extraCategory()->exists()) {
             $product->extraCategory()->dissociate();
         }
 
-        if (!empty($data['extra_category_id'])) {
-            $extraCategory = ExtraCategory::query()->find($data['extra_category_id']);
+        if (!empty($excludedData)) {
+            $extraCategory = ExtraCategory::query()->find($excludedData['extra_category_id']);
 
             $product->extraCategory()->associate($extraCategory);
         }
@@ -61,7 +66,7 @@ class ProductsController extends Controller
 
         $product->extraCategory()->associate($extraCategory);
 
-        return response(['product' => $product]);
+        return response(['product' => new ProductResource($product)]);
     }
 
     public function removeExtra(Request $request, Product $product): Response
@@ -70,21 +75,29 @@ class ProductsController extends Controller
             $product->extraCategory()->dissociate();
         }
 
-        return response(['product' => $product]);
+        return response(['product' => new ProductResource($product)]);
     }
 
     public function addIngredient(Request $request, Product $product, Ingredient $ingredient): Response
     {
-        $product->ingredients()->attach($ingredient->id);
+        $count = $request->post('count') ?? 1;
 
-        return response(['product' => $product]);
+        if ($product->ingredients()->where('ingredient_id', $ingredient->id)->exists()) {
+            $product->ingredients()->detach($ingredient->id);
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            $product->ingredients()->attach($ingredient->id);
+        }
+
+        return response(['product' => new ProductResource($product)]);
     }
 
     public function removeIngredient(Request $request, Product $product, Ingredient $ingredient): Response
     {
         $product->ingredients()->detach($ingredient->id);
 
-        return response(['product' => $product]);
+        return response(['product' => new ProductResource($product)]);
     }
 
     public function delete(Request $request, Product $product): Response
@@ -95,6 +108,6 @@ class ProductsController extends Controller
             return response('', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        return response();
+        return response('ok');
     }
 }

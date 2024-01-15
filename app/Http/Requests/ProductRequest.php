@@ -23,7 +23,7 @@ class ProductRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'price' => 'numeric',
+            'price' => 'numeric|nullable',
             'extra_category_id' => 'integer|exists:extra_categories,id',
         ];
     }

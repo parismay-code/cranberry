@@ -10,6 +10,8 @@ class ProductIngredient extends Model
 {
     use HasFactory;
 
+    protected $table = 'products_ingredients';
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

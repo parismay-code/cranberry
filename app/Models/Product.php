@@ -42,6 +42,6 @@ class Product extends Model
      */
     public function ingredients(): BelongsToMany
     {
-        return $this->belongsToMany(ProductIngredient::class, 'products_ingredients');
+        return $this->belongsToMany(Ingredient::class, 'products_ingredients');
     }
 }

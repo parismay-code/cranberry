@@ -23,7 +23,7 @@ class CategoryRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'global_price' => 'numeric',
+            'global_price' => 'numeric|nullable',
         ];
     }
 }
